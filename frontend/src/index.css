@@ -1,0 +1,173 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  /* =========================================================================
+     1. GLOBAL CARET & CURSOR BLINKER ELIMINATION (INDUSTRY STANDARD)
+     Completely eliminates unwanted text insertion caret blinkers on static UI,
+     headers, buttons, cards, badges, and breadcrumbs even if Caret Browsing
+     is enabled in the client browser.
+     ========================================================================= */
+  *,
+  *::before,
+  *::after {
+    caret-color: transparent !important;
+  }
+
+  /* Explicitly restore text caret only for interactive inputs and Monaco editor */
+  input,
+  textarea,
+  [contenteditable="true"],
+  [contenteditable="true"] *,
+  .monaco-editor,
+  .monaco-editor *,
+  .monaco-editor textarea,
+  .monaco-editor .cursors-layer,
+  .monaco-editor .cursors-layer .cursor {
+    caret-color: #38BDF8 !important;
+  }
+
+  /* =========================================================================
+     2. APPLICATION SHELL & USER-SELECT REGULATION
+     Native developer-tool feel: UI chrome does not trigger I-beam cursor
+     or unwanted text selection highlights on mouse interactions.
+     ========================================================================= */
+  html,
+  body {
+    @apply bg-navy-950 text-slate-100 font-sans antialiased;
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+    -moz-user-select: none;
+    -ms-user-select: none;
+    -webkit-tap-highlight-color: transparent;
+  }
+
+  /* Static UI containers and headers default to default arrow cursor */
+  header,
+  nav,
+  aside,
+  footer,
+  h1, h2, h3, h4, h5, h6,
+  th,
+  label,
+  summary,
+  .ui-chrome,
+  .ui-header,
+  .ui-card,
+  .ui-badge {
+    cursor: default;
+    user-select: none;
+    -webkit-user-select: none;
+  }
+
+  /* Interactive Elements explicitly have standard pointer cursor */
+  button:not(:disabled),
+  [role="button"]:not([aria-disabled="true"]),
+  a,
+  select,
+  summary,
+  input[type="checkbox"],
+  input[type="radio"],
+  input[type="range"],
+  input[type="button"],
+  input[type="submit"],
+  .cursor-pointer {
+    cursor: pointer !important;
+  }
+
+  button:disabled,
+  [aria-disabled="true"],
+  .cursor-not-allowed {
+    cursor: not-allowed !important;
+  }
+
+  /* Real text inputs & textareas get text cursor and allow selection */
+  input:not([type="button"]):not([type="submit"]):not([type="reset"]):not([type="checkbox"]):not([type="radio"]):not([type="range"]),
+  textarea {
+    cursor: text !important;
+    user-select: text !important;
+    -webkit-user-select: text !important;
+  }
+
+  /* Intentionally selectable content (code blocks, terminal console output, logs, problem descriptions) */
+  pre,
+  code,
+  .selectable,
+  .selectable-text,
+  .select-text,
+  .problem-markdown,
+  .terminal-output {
+    user-select: text !important;
+    -webkit-user-select: text !important;
+    cursor: text;
+  }
+
+  /* =========================================================================
+     3. FOCUS OUTLINE HYGIENE (WCAG 2.1 & INDUSTRY STANDARD)
+     Eliminates harsh browser-inserted focus rectangles or carets on mouse clicks
+     while preserving clean, accessible focus rings for keyboard navigation.
+     ========================================================================= */
+  :focus:not(:focus-visible) {
+    outline: none !important;
+    box-shadow: none !important;
+  }
+
+  :focus-visible {
+    outline: 2px solid rgba(56, 189, 248, 0.7) !important;
+    outline-offset: 2px;
+  }
+
+  /* =========================================================================
+     4. DRAG & DROP HYGIENE
+     Prevents unwanted ghost-dragging of UI icons, SVGs, and brand images.
+     ========================================================================= */
+  svg,
+  img {
+    user-select: none !important;
+    -webkit-user-select: none !important;
+    -webkit-user-drag: none;
+    pointer-events: auto;
+  }
+}
+
+/* Custom Scrollbar */
+.custom-scrollbar::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.custom-scrollbar::-webkit-scrollbar-track {
+  background: rgba(15, 23, 42, 0.6);
+}
+.custom-scrollbar::-webkit-scrollbar-thumb {
+  background: #334155;
+  border-radius: 4px;
+}
+.custom-scrollbar::-webkit-scrollbar-thumb:hover {
+  background: #475569;
+}
+
+.canvas-grid {
+  background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 0);
+  background-size: 24px 24px;
+}
+
+@keyframes pulse-subtle {
+  0%, 100% { opacity: 1; transform: scale(1); }
+  50% { opacity: 0.94; transform: scale(1.02); }
+}
+
+.node-active-glow {
+  animation: pulse-subtle 2s infinite ease-in-out;
+  box-shadow: 0 0 28px rgba(139, 92, 246, 0.45);
+}
+
+.node-new-glow {
+  box-shadow: 0 0 28px rgba(16, 185, 129, 0.45);
+}
+
+.code-line-active {
+  background: linear-gradient(90deg, rgba(99, 102, 241, 0.28) 0%, rgba(99, 102, 241, 0.05) 100%);
+  border-left: 3px solid #8B5CF6;
+}

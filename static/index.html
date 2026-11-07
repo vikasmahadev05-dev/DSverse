@@ -1,0 +1,1036 @@
+<!DOCTYPE html>
+<html lang="en" class="dark">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>DSVERSE — Singly Linked List Visualizer</title>
+  
+  <!-- Google Fonts: Inter & JetBrains Mono -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+  
+  <!-- Tailwind CSS -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <script>
+    tailwind.config = {
+      darkMode: 'class',
+      theme: {
+        extend: {
+          fontFamily: {
+            sans: ['Inter', 'sans-serif'],
+            mono: ['JetBrains Mono', 'monospace'],
+          },
+          colors: {
+            navy: {
+              950: '#060913',
+              900: '#0B0F19',
+              850: '#0F1626',
+              800: '#141D32',
+              700: '#1E293B',
+              600: '#334155',
+            },
+            accent: {
+              violet: '#8B5CF6',
+              blue: '#38BDF8',
+              indigo: '#6366F1',
+              emerald: '#10B981',
+              amber: '#F59E0B',
+              rose: '#F43F5E',
+            }
+          },
+          boxShadow: {
+            'glow-blue': '0 0 24px -2px rgba(56, 189, 248, 0.35)',
+            'glow-violet': '0 0 24px -2px rgba(139, 92, 246, 0.40)',
+            'glow-emerald': '0 0 24px -2px rgba(16, 185, 129, 0.35)',
+            'card': '0 8px 30px -4px rgba(0, 0, 0, 0.5)',
+          }
+        }
+      }
+    }
+  </script>
+
+  <!-- React 18 & Babel for interactive component execution -->
+  <script src="https://unpkg.com/react@18/umd/react.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/react-dom@18/umd/react-dom.production.min.js" crossorigin></script>
+  <script src="https://unpkg.com/@babel/standalone/babel.min.js"></script>
+
+  <!-- Lucide Icons -->
+  <script src="https://unpkg.com/lucide@latest/dist/umd/lucide.js"></script>
+
+  <style>
+    body {
+      background-color: #060913;
+      color: #F8FAFC;
+      overflow-x: hidden;
+      font-family: 'Inter', sans-serif;
+    }
+    .custom-scrollbar::-webkit-scrollbar {
+      width: 6px;
+      height: 6px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-track {
+      background: rgba(15, 23, 42, 0.6);
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb {
+      background: #334155;
+      border-radius: 4px;
+    }
+    .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+      background: #475569;
+    }
+    .canvas-grid {
+      background-image: radial-gradient(rgba(255, 255, 255, 0.06) 1px, transparent 0);
+      background-size: 24px 24px;
+    }
+    @keyframes pulse-subtle {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.92; transform: scale(1.02); }
+    }
+    .node-active-glow {
+      animation: pulse-subtle 2s infinite ease-in-out;
+      box-shadow: 0 0 28px rgba(139, 92, 246, 0.45);
+    }
+    .node-new-glow {
+      box-shadow: 0 0 28px rgba(16, 185, 129, 0.45);
+    }
+    .code-line-active {
+      background: linear-gradient(90deg, rgba(99, 102, 241, 0.28) 0%, rgba(99, 102, 241, 0.05) 100%);
+      border-left: 3px solid #8B5CF6;
+    }
+  </style>
+</head>
+<body class="bg-navy-950 text-slate-100 min-h-screen flex antialiased select-none">
+  <div id="root" class="w-full h-screen flex overflow-hidden"></div>
+
+  <!-- Main Application Script (Babel compiled) -->
+  <script type="text/babel">
+    const { useState, useEffect, useRef } = React;
+
+    // Helper to render Lucide icons in React
+    const Icon = ({ name, size = 18, className = "" }) => {
+      const ref = useRef(null);
+      useEffect(() => {
+        if (ref.current && window.lucide) {
+          ref.current.innerHTML = `<i data-lucide="${name}"></i>`;
+          window.lucide.createIcons({
+            attrs: { width: size, height: size, class: className }
+          });
+        }
+      }, [name, size, className]);
+      return <span ref={ref} className="inline-flex items-center justify-center" />;
+    };
+
+    function App() {
+      // Linked List State
+      const [listNodes, setListNodes] = useState([]);
+      const [headId, setHeadId] = useState(null);
+      const [totalNodes, setTotalNodes] = useState(4);
+      const [totalTraversals, setTotalTraversals] = useState(0);
+      const [totalOperations, setTotalOperations] = useState(0);
+
+      // Step-Based Execution Engine State
+      const [steps, setSteps] = useState([]);
+      const [currentStepIndex, setCurrentStepIndex] = useState(0);
+      const [currentOperation, setCurrentOperation] = useState("System Ready");
+      const [codeSnippet, setCodeSnippet] = useState(
+        "def insert_beginning(self, value):\n    new_node = Node(value)\n    new_node.next = self.head\n    self.head = new_node"
+      );
+      const [activeCodeLine, setActiveCodeLine] = useState(1);
+      const [timeComplexity, setTimeComplexity] = useState("O(1)");
+      const [spaceComplexity, setSpaceComplexity] = useState("O(1)");
+      const [logs, setLogs] = useState([
+        { step: "00", text: "DSVERSE Singly Linked List Lab Initialized.", type: "info" }
+      ]);
+
+      // Playback & Animation State
+      const [isPlaying, setIsPlaying] = useState(false);
+      const [speed, setSpeed] = useState(1);
+      const [zoom, setZoom] = useState(1);
+
+      // Input Form States
+      const [insertBegVal, setInsertBegVal] = useState(15);
+      const [insertEndVal, setInsertEndVal] = useState(50);
+      const [insertPosVal, setInsertPosVal] = useState(25);
+      const [insertPosIdx, setInsertPosIdx] = useState(1);
+      const [deletePosIdx, setDeletePosIdx] = useState(1);
+      const [searchTarget, setSearchTarget] = useState(30);
+      const [errorMessage, setErrorMessage] = useState("");
+      const [activeTab, setActiveTab] = useState("insert");
+
+      // API Endpoint URL
+      const API_URL = "http://127.0.0.1:8000/api/linked-list";
+
+      // Fetch Initial State on mount
+      useEffect(() => {
+        fetchState();
+      }, []);
+
+      const fetchState = async () => {
+        try {
+          const res = await fetch(`${API_URL}/state`);
+          if (res.ok) {
+            const data = await res.json();
+            setListNodes(data.nodes || []);
+            setHeadId(data.head_id);
+            setTotalNodes(data.total_nodes);
+            setTotalOperations(data.total_operations);
+          }
+        } catch (e) {
+          console.warn("API Offline, utilizing client-fallback engine", e);
+        }
+      };
+
+      // Handle Operation Execution from API
+      const executeOp = async (endpoint, payload = null) => {
+        setErrorMessage("");
+        setIsPlaying(false);
+        try {
+          const options = {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+          };
+          if (payload) options.body = JSON.stringify(payload);
+
+          const res = await fetch(`${API_URL}/${endpoint}`, options);
+          const data = await res.json();
+
+          if (!res.ok || data.error) {
+            setErrorMessage(data.detail || data.message || "Operation failed.");
+            return;
+          }
+
+          // Load steps into execution engine
+          if (data.steps && data.steps.length > 0) {
+            setSteps(data.steps);
+            setCurrentStepIndex(0);
+            setCurrentOperation(data.operation || endpoint);
+            setCodeSnippet(data.code_snippet || codeSnippet);
+            setTimeComplexity(data.time_complexity || "O(1)");
+            setSpaceComplexity(data.space_complexity || "O(1)");
+            setTotalNodes(data.total_nodes);
+            setTotalTraversals(prev => prev + (data.total_pointers_traversed || 0));
+            setTotalOperations(prev => prev + 1);
+
+            // Apply first step
+            applyStep(data.steps[0]);
+
+            // Add to execution logs
+            const newLogs = data.steps.map(s => ({
+              step: s.step_number.toString().padStart(2, "0"),
+              text: s.description,
+              type: s.log_type
+            }));
+            setLogs(newLogs);
+          }
+        } catch (err) {
+          setErrorMessage("Failed to connect to backend server. Make sure port 8000 is active.");
+        }
+      };
+
+      // Apply a specific step snapshot to the visual canvas and code inspector
+      const applyStep = (step) => {
+        if (!step) return;
+        setListNodes(step.nodes || []);
+        setHeadId(step.head_id);
+        setActiveCodeLine(step.code_line || 1);
+      };
+
+      // Step Navigation handlers
+      const nextStep = () => {
+        if (currentStepIndex < steps.length - 1) {
+          const nextIdx = currentStepIndex + 1;
+          setCurrentStepIndex(nextIdx);
+          applyStep(steps[nextIdx]);
+        } else {
+          setIsPlaying(false);
+        }
+      };
+
+      const prevStep = () => {
+        if (currentStepIndex > 0) {
+          const prevIdx = currentStepIndex - 1;
+          setCurrentStepIndex(prevIdx);
+          applyStep(steps[prevIdx]);
+        }
+      };
+
+      const restartSteps = () => {
+        if (steps.length > 0) {
+          setCurrentStepIndex(0);
+          applyStep(steps[0]);
+        }
+      };
+
+      // Auto-playback timer
+      useEffect(() => {
+        let timer;
+        if (isPlaying && steps.length > 0) {
+          const interval = 1200 / speed;
+          timer = setInterval(() => {
+            setCurrentStepIndex((prev) => {
+              if (prev < steps.length - 1) {
+                const next = prev + 1;
+                applyStep(steps[next]);
+                return next;
+              } else {
+                setIsPlaying(false);
+                return prev;
+              }
+            });
+          }, interval);
+        }
+        return () => clearInterval(timer);
+      }, [isPlaying, speed, steps]);
+
+      return (
+        <div className="w-full h-full flex bg-navy-950 text-slate-200">
+          
+          {/* ======================================================== */}
+          {/* A. LEFT SIDEBAR */}
+          {/* ======================================================== */}
+          <aside className="w-64 border-r border-navy-700 bg-navy-900 flex flex-col justify-between flex-shrink-0 z-20">
+            <div>
+              {/* Logo */}
+              <div className="p-6 border-b border-navy-700/60 flex items-center gap-3">
+                <div className="w-9 h-9 rounded-xl bg-gradient-to-tr from-accent-indigo to-accent-violet flex items-center justify-center shadow-glow-violet">
+                  <Icon name="atom" size={20} className="text-white" />
+                </div>
+                <div>
+                  <h1 className="font-bold text-lg tracking-wider text-white">DSVERSE</h1>
+                  <p className="text-[10px] tracking-widest text-slate-400 font-mono font-semibold">DATA STRUCTURES LAB</p>
+                </div>
+              </div>
+
+              {/* Navigation Sections */}
+              <div className="p-4 space-y-6 overflow-y-auto custom-scrollbar max-h-[calc(100vh-170px)]">
+                {/* WORKSPACE */}
+                <div>
+                  <p className="text-[11px] font-mono tracking-wider text-slate-500 uppercase px-3 mb-2 font-medium">Workspace</p>
+                  <nav className="space-y-1">
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="layout-dashboard" size={16} /> Overview
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="orbit" size={16} /> DS Universe
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="flask-conical" size={16} /> Algorithm Lab
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="shield-alert" size={16} /> DS Detective
+                    </button>
+                  </nav>
+                </div>
+
+                {/* DATA STRUCTURES */}
+                <div>
+                  <p className="text-[11px] font-mono tracking-wider text-slate-500 uppercase px-3 mb-2 font-medium">Data Structures</p>
+                  <nav className="space-y-1">
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="rows-3" size={16} /> Arrays
+                    </button>
+                    {/* Active Module: Linked Lists */}
+                    <button className="w-full flex items-center justify-between px-3 py-2 rounded-lg text-sm font-medium bg-gradient-to-r from-accent-indigo/20 to-accent-violet/10 text-accent-blue border border-accent-blue/30 shadow-sm transition">
+                      <span className="flex items-center gap-3">
+                        <Icon name="git-commit" size={16} className="text-accent-blue" /> Linked Lists
+                      </span>
+                      <span className="w-1.5 h-1.5 rounded-full bg-accent-blue shadow-glow-blue animate-pulse"></span>
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="layers" size={16} /> Stacks
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="list-ordered" size={16} /> Queues
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="git-branch" size={16} /> Trees
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="network" size={16} /> Graphs
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="hash" size={16} /> Hash Tables
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="mountain-snow" size={16} /> Heaps
+                    </button>
+                  </nav>
+                </div>
+
+                {/* LEARNING */}
+                <div>
+                  <p className="text-[11px] font-mono tracking-wider text-slate-500 uppercase px-3 mb-2 font-medium">Learning</p>
+                  <nav className="space-y-1">
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="trophy" size={16} /> Challenges
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="medal" size={16} /> Achievements
+                    </button>
+                    <button className="w-full flex items-center gap-3 px-3 py-2 rounded-lg text-sm text-slate-400 hover:text-white hover:bg-navy-800 transition">
+                      <Icon name="flame" size={16} /> Leaderboard
+                    </button>
+                  </nav>
+                </div>
+              </div>
+            </div>
+
+            {/* User Profile Card */}
+            <div className="p-4 border-t border-navy-700/60 bg-navy-950/40">
+              <div className="flex items-center gap-3 p-2 rounded-lg bg-navy-800/60 border border-navy-700">
+                <div className="w-8 h-8 rounded-full bg-accent-violet/30 border border-accent-violet flex items-center justify-center font-bold text-xs text-accent-violet">
+                  EX
+                </div>
+                <div className="flex-1 min-w-0">
+                  <p className="text-xs font-semibold text-white truncate">Explorer Vikas</p>
+                  <p className="text-[10px] text-accent-blue font-mono">Byte Specialist • 250 XP</p>
+                </div>
+                <Icon name="sparkles" size={14} className="text-accent-amber" />
+              </div>
+            </div>
+          </aside>
+
+          {/* ======================================================== */}
+          {/* MAIN CONTENT AREA */}
+          {/* ======================================================== */}
+          <div className="flex-1 flex flex-col h-full overflow-hidden">
+            
+            {/* ======================================================== */}
+            {/* B. TOP HEADER */}
+            {/* ======================================================== */}
+            <header className="h-16 border-b border-navy-700 bg-navy-900/80 backdrop-blur px-8 flex items-center justify-between flex-shrink-0 z-10">
+              <div>
+                <nav className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-1">
+                  <span>DS Universe</span>
+                  <span>/</span>
+                  <span>Linked Lists</span>
+                  <span>/</span>
+                  <span className="text-accent-blue font-medium">Singly Linked List</span>
+                </nav>
+                <div className="flex items-center gap-3">
+                  <h2 className="text-base font-bold text-white tracking-tight">Singly Linked List Visualizer</h2>
+                  <span className="px-2 py-0.5 rounded text-[10px] font-mono font-bold bg-accent-blue/10 text-accent-blue border border-accent-blue/30 tracking-wider">
+                    BEGINNER
+                  </span>
+                </div>
+              </div>
+
+              <div className="flex items-center gap-3">
+                <p className="text-xs text-slate-400 hidden xl:block">
+                  Explore pointer manipulation through interactive execution
+                </p>
+                <button
+                  onClick={() => executeOp("reset")}
+                  className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-navy-800 hover:bg-navy-700 text-slate-300 hover:text-white border border-navy-600 transition"
+                  title="Reset to 10 -> 20 -> 30 -> 40"
+                >
+                  <Icon name="rotate-ccw" size={14} /> Reset Demo
+                </button>
+                <button
+                  className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-400 hover:text-white border border-navy-600 flex items-center justify-center transition"
+                  title="Module Documentation"
+                >
+                  <Icon name="help-circle" size={16} />
+                </button>
+              </div>
+            </header>
+
+            {/* Error Notification Bar */}
+            {errorMessage && (
+              <div className="px-8 py-2 bg-accent-rose/15 border-b border-accent-rose/30 text-accent-rose text-xs flex items-center justify-between">
+                <span className="flex items-center gap-2">
+                  <Icon name="alert-triangle" size={14} />
+                  {errorMessage}
+                </span>
+                <button onClick={() => setErrorMessage("")} className="hover:text-white">✕</button>
+              </div>
+            )}
+
+            {/* Workspace Container */}
+            <main className="flex-1 overflow-y-auto custom-scrollbar p-6 space-y-6">
+              
+              {/* ======================================================== */}
+              {/* 3. LINKED LIST VISUALIZATION CANVAS */}
+              {/* ======================================================== */}
+              <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5 shadow-card relative flex flex-col min-h-[300px]">
+                {/* Canvas Header & Toolbar */}
+                <div className="flex items-center justify-between mb-4 pb-3 border-b border-navy-700/60">
+                  <div className="flex items-center gap-2">
+                    <span className="w-2.5 h-2.5 rounded-full bg-accent-emerald animate-pulse"></span>
+                    <span className="text-xs font-mono font-semibold uppercase tracking-wider text-slate-300">
+                      Pointer Topology Canvas
+                    </span>
+                    <span className="text-[11px] font-mono text-slate-500 ml-2">
+                      ({listNodes.length} nodes active)
+                    </span>
+                  </div>
+
+                  {/* Canvas Toolbar: Zoom In, Zoom Out, Center, Reset */}
+                  <div className="flex items-center gap-1 bg-navy-800 p-1 rounded-lg border border-navy-700 text-slate-400">
+                    <button
+                      onClick={() => setZoom(z => Math.min(1.5, z + 0.1))}
+                      className="p-1.5 hover:text-white hover:bg-navy-700 rounded transition"
+                      title="Zoom In"
+                    >
+                      <Icon name="zoom-in" size={15} />
+                    </button>
+                    <button
+                      onClick={() => setZoom(z => Math.max(0.6, z - 0.1))}
+                      className="p-1.5 hover:text-white hover:bg-navy-700 rounded transition"
+                      title="Zoom Out"
+                    >
+                      <Icon name="zoom-out" size={15} />
+                    </button>
+                    <button
+                      onClick={() => setZoom(1)}
+                      className="p-1.5 hover:text-white hover:bg-navy-700 rounded transition"
+                      title="Center / Reset View"
+                    >
+                      <Icon name="maximize-2" size={15} />
+                    </button>
+                    <div className="w-px h-4 bg-navy-700 mx-1"></div>
+                    <button
+                      onClick={() => executeOp("reset")}
+                      className="p-1.5 hover:text-accent-rose hover:bg-navy-700 rounded transition"
+                      title="Reset Visualization"
+                    >
+                      <Icon name="refresh-cw" size={15} />
+                    </button>
+                  </div>
+                </div>
+
+                {/* Canvas Render Area */}
+                <div className="flex-1 w-full overflow-x-auto custom-scrollbar canvas-grid rounded-xl p-8 flex items-center justify-start min-h-[200px] border border-navy-800/80 bg-navy-950/70">
+                  <div
+                    className="flex items-center transition-transform duration-300 origin-left"
+                    style={{ transform: `scale(${zoom})` }}
+                  >
+                    {/* Empty State */}
+                    {listNodes.length === 0 ? (
+                      <div className="w-full flex flex-col items-center justify-center py-12 text-center text-slate-500">
+                        <div className="w-12 h-12 rounded-2xl bg-navy-800 border border-navy-700 flex items-center justify-center mb-3">
+                          <Icon name="binary" size={24} className="text-slate-400" />
+                        </div>
+                        <p className="text-sm font-semibold text-slate-300 font-mono">Linked List is Empty</p>
+                        <p className="text-xs text-slate-500 mt-1">HEAD pointer currently references NULL. Insert a node to begin.</p>
+                      </div>
+                    ) : (
+                      <>
+                        {/* HEAD POINTER BADGE */}
+                        <div className="flex items-center mr-4">
+                          <div className="flex flex-col items-center">
+                            <span className="text-[10px] font-mono font-bold tracking-wider text-accent-blue uppercase bg-accent-blue/10 border border-accent-blue/30 px-2 py-0.5 rounded shadow-glow-blue">
+                              HEAD
+                            </span>
+                            <span className="text-accent-blue font-mono text-sm mt-1">➔</span>
+                          </div>
+                        </div>
+
+                        {/* NODES ROW */}
+                        {listNodes.map((node, idx) => {
+                          const isHead = node.is_head || node.id === headId || idx === 0;
+                          const isActive = node.is_active;
+                          const isNew = node.is_new;
+                          const isDeleted = node.is_deleted;
+
+                          return (
+                            <div key={node.id} className="flex items-center">
+                              {/* Single Node Card */}
+                              <div className="flex flex-col items-center">
+                                {/* Index indicator */}
+                                <span className="text-[10px] font-mono text-slate-500 mb-1">
+                                  [{idx}]
+                                </span>
+
+                                {/* Node Body: [Data | Next Pointer] */}
+                                <div
+                                  className={`flex h-16 rounded-xl border transition-all duration-300 overflow-hidden ${
+                                    isDeleted
+                                      ? "border-accent-rose bg-accent-rose/20 opacity-40 line-through"
+                                      : isNew
+                                      ? "border-accent-emerald bg-accent-emerald/15 node-new-glow"
+                                      : isActive
+                                      ? "border-accent-violet bg-accent-violet/20 node-active-glow ring-2 ring-accent-violet/50"
+                                      : "border-navy-600 bg-navy-800 hover:border-accent-blue/60 hover:bg-navy-800/90 shadow-card"
+                                  }`}
+                                >
+                                  {/* Section 1: Data */}
+                                  <div className="px-5 flex flex-col justify-center items-center border-r border-navy-700/80 bg-navy-900/60 min-w-[70px]">
+                                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">val</span>
+                                    <span className="text-lg font-bold font-mono text-white tracking-tight">{node.value}</span>
+                                  </div>
+
+                                  {/* Section 2: Next Pointer */}
+                                  <div className="px-3 flex flex-col justify-center items-center bg-navy-950/40 min-w-[55px]">
+                                    <span className="text-[9px] font-mono text-slate-400 uppercase tracking-wider">next</span>
+                                    <span className="text-xs font-mono font-semibold text-accent-blue flex items-center gap-0.5">
+                                      {idx < listNodes.length - 1 ? "•➔" : "NULL"}
+                                    </span>
+                                  </div>
+                                </div>
+
+                                {/* Node ID Badge */}
+                                <span className="text-[9px] font-mono text-slate-500 mt-1">
+                                  {node.id}
+                                </span>
+                              </div>
+
+                              {/* Directional Connection Arrow */}
+                              {idx < listNodes.length - 1 && (
+                                <div className="mx-3 flex items-center text-accent-blue">
+                                  <svg width="40" height="18" viewBox="0 0 40 18" fill="none">
+                                    <path
+                                      d="M2 9H34M34 9L26 3M34 9L26 15"
+                                      stroke="#38BDF8"
+                                      strokeWidth="2.5"
+                                      strokeLinecap="round"
+                                      strokeLinejoin="round"
+                                    />
+                                  </svg>
+                                </div>
+                              )}
+                            </div>
+                          );
+                        })}
+
+                        {/* TERMINAL NULL POINTER */}
+                        <div className="flex items-center ml-3">
+                          <svg width="32" height="18" viewBox="0 0 32 18" fill="none">
+                            <path
+                              d="M2 9H26M26 9L18 3M26 9L18 15"
+                              stroke="#64748B"
+                              strokeWidth="2.5"
+                              strokeLinecap="round"
+                              strokeLinejoin="round"
+                            />
+                          </svg>
+                          <div className="px-3 py-1.5 rounded-lg border border-navy-700 bg-navy-900/90 text-accent-rose font-mono text-xs font-bold tracking-wider">
+                            NULL
+                          </div>
+                        </div>
+                      </>
+                    )}
+                  </div>
+                </div>
+
+                {/* ======================================================== */}
+                {/* 5. EXECUTION CONTROLS BAR */}
+                {/* ======================================================== */}
+                <div className="mt-4 pt-3 border-t border-navy-700/80 flex flex-wrap items-center justify-between gap-4">
+                  
+                  {/* Left: Play/Pause/Steps */}
+                  <div className="flex items-center gap-2">
+                    <button
+                      onClick={restartSteps}
+                      disabled={steps.length === 0}
+                      className="p-2 rounded-lg bg-navy-800 hover:bg-navy-700 disabled:opacity-40 text-slate-300 border border-navy-600 transition"
+                      title="Restart Execution"
+                    >
+                      <Icon name="rotate-ccw" size={16} />
+                    </button>
+                    <button
+                      onClick={prevStep}
+                      disabled={currentStepIndex === 0 || steps.length === 0}
+                      className="p-2 rounded-lg bg-navy-800 hover:bg-navy-700 disabled:opacity-40 text-slate-300 border border-navy-600 transition"
+                      title="Previous Step"
+                    >
+                      <Icon name="skip-back" size={16} />
+                    </button>
+                    <button
+                      onClick={() => setIsPlaying(!isPlaying)}
+                      disabled={steps.length === 0}
+                      className={`flex items-center gap-2 px-4 py-2 rounded-lg font-semibold text-xs border transition ${
+                        isPlaying
+                          ? "bg-accent-amber/20 border-accent-amber text-accent-amber"
+                          : "bg-accent-indigo hover:bg-accent-indigo/90 border-accent-indigo text-white shadow-glow-violet"
+                      }`}
+                    >
+                      <Icon name={isPlaying ? "pause" : "play"} size={16} />
+                      {isPlaying ? "Pause" : "Play"}
+                    </button>
+                    <button
+                      onClick={nextStep}
+                      disabled={currentStepIndex >= steps.length - 1 || steps.length === 0}
+                      className="p-2 rounded-lg bg-navy-800 hover:bg-navy-700 disabled:opacity-40 text-slate-300 border border-navy-600 transition"
+                      title="Next Step"
+                    >
+                      <Icon name="skip-forward" size={16} />
+                    </button>
+
+                    {/* Speed selector */}
+                    <div className="flex items-center bg-navy-800 rounded-lg p-0.5 border border-navy-700 ml-2">
+                      {[0.5, 1, 1.5, 2].map((s) => (
+                        <button
+                          key={s}
+                          onClick={() => setSpeed(s)}
+                          className={`px-2 py-1 text-[11px] font-mono rounded ${
+                            speed === s ? "bg-accent-blue text-navy-950 font-bold" : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {s}x
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* Center: Step Counter & Progress */}
+                  <div className="flex-1 max-w-xs flex flex-col items-center">
+                    <div className="w-full flex justify-between text-[11px] font-mono text-slate-400 mb-1">
+                      <span>Step {steps.length > 0 ? currentStepIndex + 1 : 0} of {steps.length}</span>
+                      <span className="text-accent-blue font-semibold truncate max-w-[140px]">{currentOperation}</span>
+                    </div>
+                    <div className="w-full h-1.5 rounded-full bg-navy-800 overflow-hidden border border-navy-700">
+                      <div
+                        className="h-full bg-gradient-to-r from-accent-indigo to-accent-blue transition-all duration-300"
+                        style={{
+                          width: `${steps.length > 0 ? ((currentStepIndex + 1) / steps.length) * 100 : 0}%`
+                        }}
+                      ></div>
+                    </div>
+                  </div>
+
+                  {/* Right: Operational Status */}
+                  <div className="flex items-center gap-2">
+                    <span className="text-xs font-mono text-slate-400">Status:</span>
+                    <span className="px-2 py-1 rounded-md text-[11px] font-mono font-semibold bg-accent-emerald/10 text-accent-emerald border border-accent-emerald/30">
+                      Engine Ready
+                    </span>
+                  </div>
+                </div>
+              </div>
+
+              {/* ======================================================== */}
+              {/* TWO-COLUMN LOWER SECTION: CONTROLS & INSPECTOR */}
+              {/* ======================================================== */}
+              <div className="grid grid-cols-1 lg:grid-cols-12 gap-6">
+                
+                {/* ======================================================== */}
+                {/* 4. OPERATION CONTROL PANEL (Col 1-5) */}
+                {/* ======================================================== */}
+                <div className="lg:col-span-5 bg-navy-900 border border-navy-700 rounded-2xl p-5 shadow-card flex flex-col">
+                  <div className="flex items-center justify-between pb-3 border-b border-navy-700/60 mb-4">
+                    <div className="flex items-center gap-2">
+                      <Icon name="sliders" size={16} className="text-accent-blue" />
+                      <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
+                        Operation Controls
+                      </h3>
+                    </div>
+                    
+                    {/* Operation Tabs */}
+                    <div className="flex bg-navy-800 p-1 rounded-lg border border-navy-700 text-xs">
+                      {["insert", "delete", "other"].map(tab => (
+                        <button
+                          key={tab}
+                          onClick={() => setActiveTab(tab)}
+                          className={`px-3 py-1 rounded capitalize font-medium transition ${
+                            activeTab === tab
+                              ? "bg-accent-indigo text-white shadow-sm"
+                              : "text-slate-400 hover:text-white"
+                          }`}
+                        >
+                          {tab}
+                        </button>
+                      ))}
+                    </div>
+                  </div>
+
+                  {/* TAB 1: INSERT OPERATIONS */}
+                  {activeTab === "insert" && (
+                    <div className="space-y-4">
+                      {/* Insert Beginning */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 space-y-2">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                          <span>Insert at Beginning</span>
+                          <span className="text-[10px] font-mono text-accent-blue">O(1)</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={insertBegVal}
+                            onChange={(e) => setInsertBegVal(parseInt(e.target.value) || 0)}
+                            className="w-28 px-3 py-1.5 rounded-lg bg-navy-950 border border-navy-600 text-xs text-white focus:outline-none focus:border-accent-blue font-mono"
+                            placeholder="Value"
+                          />
+                          <button
+                            onClick={() => executeOp("insert-beginning", { value: insertBegVal })}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-accent-indigo hover:bg-accent-indigo/90 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-sm"
+                          >
+                            <Icon name="plus" size={14} /> Prepend Node
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Insert End */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 space-y-2">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                          <span>Insert at End</span>
+                          <span className="text-[10px] font-mono text-accent-amber">O(n)</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={insertEndVal}
+                            onChange={(e) => setInsertEndVal(parseInt(e.target.value) || 0)}
+                            className="w-28 px-3 py-1.5 rounded-lg bg-navy-950 border border-navy-600 text-xs text-white focus:outline-none focus:border-accent-blue font-mono"
+                            placeholder="Value"
+                          />
+                          <button
+                            onClick={() => executeOp("insert-end", { value: insertEndVal })}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-navy-700 hover:bg-navy-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-navy-600 transition"
+                          >
+                            <Icon name="plus" size={14} /> Append Node
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Insert Position */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 space-y-2">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                          <span>Insert at Position</span>
+                          <span className="text-[10px] font-mono text-accent-amber">O(n)</span>
+                        </label>
+                        <div className="grid grid-cols-2 gap-2">
+                          <input
+                            type="number"
+                            value={insertPosVal}
+                            onChange={(e) => setInsertPosVal(parseInt(e.target.value) || 0)}
+                            className="px-3 py-1.5 rounded-lg bg-navy-950 border border-navy-600 text-xs text-white focus:outline-none focus:border-accent-blue font-mono"
+                            placeholder="Value"
+                          />
+                          <input
+                            type="number"
+                            min="0"
+                            max={listNodes.length}
+                            value={insertPosIdx}
+                            onChange={(e) => setInsertPosIdx(parseInt(e.target.value) || 0)}
+                            className="px-3 py-1.5 rounded-lg bg-navy-950 border border-navy-600 text-xs text-white focus:outline-none focus:border-accent-blue font-mono"
+                            placeholder="Index (0..N)"
+                          />
+                        </div>
+                        <button
+                          onClick={() => executeOp("insert-position", { value: insertPosVal, position: insertPosIdx })}
+                          className="w-full px-3 py-1.5 rounded-lg bg-navy-700 hover:bg-navy-600 text-white text-xs font-semibold flex items-center justify-center gap-1.5 border border-navy-600 transition"
+                        >
+                          <Icon name="corner-down-right" size={14} /> Insert at Index
+                        </button>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 2: DELETE OPERATIONS */}
+                  {activeTab === "delete" && (
+                    <div className="space-y-4">
+                      {/* Delete Beginning */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-white">Delete from Beginning</p>
+                          <p className="text-[10px] font-mono text-slate-400">Sever HEAD and promote second node</p>
+                        </div>
+                        <button
+                          onClick={() => executeOp("delete-beginning")}
+                          className="px-3 py-1.5 rounded-lg bg-accent-rose/20 hover:bg-accent-rose/30 text-accent-rose border border-accent-rose/40 text-xs font-semibold flex items-center gap-1.5 transition"
+                        >
+                          <Icon name="trash-2" size={14} /> Delete Head
+                        </button>
+                      </div>
+
+                      {/* Delete End */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 flex items-center justify-between">
+                        <div>
+                          <p className="text-xs font-semibold text-white">Delete from End</p>
+                          <p className="text-[10px] font-mono text-slate-400">Traverse to penultimate node and set next = NULL</p>
+                        </div>
+                        <button
+                          onClick={() => executeOp("delete-end")}
+                          className="px-3 py-1.5 rounded-lg bg-navy-700 hover:bg-navy-600 text-slate-200 border border-navy-600 text-xs font-semibold flex items-center gap-1.5 transition"
+                        >
+                          <Icon name="trash-2" size={14} /> Delete Tail
+                        </button>
+                      </div>
+
+                      {/* Delete Position */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 space-y-2">
+                        <label className="text-xs font-semibold text-slate-300">Delete at Index</label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            min="0"
+                            max={Math.max(0, listNodes.length - 1)}
+                            value={deletePosIdx}
+                            onChange={(e) => setDeletePosIdx(parseInt(e.target.value) || 0)}
+                            className="w-28 px-3 py-1.5 rounded-lg bg-navy-950 border border-navy-600 text-xs text-white focus:outline-none focus:border-accent-blue font-mono"
+                            placeholder="Index"
+                          />
+                          <button
+                            onClick={() => executeOp("delete-position", { position: deletePosIdx })}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-navy-700 hover:bg-navy-600 text-slate-200 text-xs font-semibold flex items-center justify-center gap-1.5 border border-navy-600 transition"
+                          >
+                            <Icon name="trash" size={14} /> Remove at Index
+                          </button>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+
+                  {/* TAB 3: OTHER OPERATIONS */}
+                  {activeTab === "other" && (
+                    <div className="space-y-4">
+                      {/* Search */}
+                      <div className="p-3.5 rounded-xl bg-navy-800/60 border border-navy-700 space-y-2">
+                        <label className="text-xs font-semibold text-slate-300 flex items-center justify-between">
+                          <span>Search Element</span>
+                          <span className="text-[10px] font-mono text-accent-blue">O(n)</span>
+                        </label>
+                        <div className="flex gap-2">
+                          <input
+                            type="number"
+                            value={searchTarget}
+                            onChange={(e) => setSearchTarget(parseInt(e.target.value) || 0)}
+                            className="w-28 px-3 py-1.5 rounded-lg bg-navy-950 border border-navy-600 text-xs text-white focus:outline-none focus:border-accent-blue font-mono"
+                            placeholder="Target"
+                          />
+                          <button
+                            onClick={() => executeOp("search", { target: searchTarget })}
+                            className="flex-1 px-3 py-1.5 rounded-lg bg-accent-violet hover:bg-accent-violet/90 text-white text-xs font-semibold flex items-center justify-center gap-1.5 transition shadow-sm"
+                          >
+                            <Icon name="search" size={14} /> Find Target
+                          </button>
+                        </div>
+                      </div>
+
+                      {/* Reverse & Clear */}
+                      <div className="grid grid-cols-2 gap-2">
+                        <button
+                          onClick={() => executeOp("reverse")}
+                          className="px-3 py-2 rounded-xl bg-navy-800 hover:bg-navy-700 text-slate-200 border border-navy-600 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                        >
+                          <Icon name="repeat" size={14} /> Reverse List
+                        </button>
+                        <button
+                          onClick={() => executeOp("clear")}
+                          className="px-3 py-2 rounded-xl bg-accent-rose/15 hover:bg-accent-rose/25 text-accent-rose border border-accent-rose/30 text-xs font-semibold flex items-center justify-center gap-1.5 transition"
+                        >
+                          <Icon name="x-circle" size={14} /> Clear List
+                        </button>
+                      </div>
+                    </div>
+                  )}
+                </div>
+
+                {/* ======================================================== */}
+                {/* 6. CODE INSPECTOR & 7. EXECUTION LOG (Col 6-12) */}
+                {/* ======================================================== */}
+                <div className="lg:col-span-7 space-y-6">
+                  
+                  {/* CODE INSPECTOR */}
+                  <div className="bg-navy-900 border border-navy-700 rounded-2xl p-5 shadow-card">
+                    <div className="flex items-center justify-between pb-3 border-b border-navy-700/60 mb-3">
+                      <div className="flex items-center gap-2">
+                        <Icon name="code-2" size={16} className="text-accent-violet" />
+                        <h3 className="text-sm font-bold text-white tracking-wide uppercase font-mono">
+                          Python Code Inspector
+                        </h3>
+                      </div>
+                      <span className="text-[10px] font-mono text-slate-400 bg-navy-800 px-2 py-0.5 rounded border border-navy-700">
+                        data_structures/linked_list.py
+                      </span>
+                    </div>
+
+                    {/* Code Snippet with Line Highlighting */}
+                    <div className="bg-navy-950 rounded-xl p-4 font-mono text-xs overflow-x-auto custom-scrollbar border border-navy-800 text-slate-300">
+                      {codeSnippet.split("\n").map((line, lIdx) => {
+                        const lineNumber = lIdx + 1;
+                        const isLineActive = lineNumber === activeCodeLine;
+
+                        return (
+                          <div
+                            key={lineNumber}
+                            className={`flex items-center py-0.5 px-2 rounded transition-colors ${
+                              isLineActive ? "code-line-active text-white font-semibold" : "text-slate-400"
+                            }`}
+                          >
+                            <span className="w-8 select-none text-[10px] text-slate-600 text-right pr-3 font-mono">
+                              {lineNumber}
+                            </span>
+                            <span className="flex-1 whitespace-pre">{line}</span>
+                          </div>
+                        );
+                      })}
+                    </div>
+                  </div>
+
+                  {/* EXECUTION LOG & COMPLEXITY GRID */}
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    
+                    {/* 7. EXECUTION LOG */}
+                    <div className="bg-navy-900 border border-navy-700 rounded-2xl p-4 shadow-card flex flex-col h-44">
+                      <div className="flex items-center justify-between pb-2 border-b border-navy-700/60 mb-2">
+                        <span className="text-xs font-mono font-bold uppercase text-slate-300 flex items-center gap-2">
+                          <Icon name="terminal" size={14} className="text-accent-emerald" /> Execution Log
+                        </span>
+                        <span className="text-[10px] font-mono text-slate-500">{logs.length} entries</span>
+                      </div>
+                      <div className="flex-1 overflow-y-auto custom-scrollbar space-y-1.5 font-mono text-[11px] pr-1">
+                        {logs.map((log, i) => (
+                          <div key={i} className="flex items-start gap-2 leading-relaxed">
+                            <span className="text-accent-blue font-semibold shrink-0">[{log.step}]</span>
+                            <span className={
+                              log.type === "success" ? "text-accent-emerald" :
+                              log.type === "error" ? "text-accent-rose" :
+                              log.type === "pointer" ? "text-accent-violet" : "text-slate-300"
+                            }>
+                              {log.text}
+                            </span>
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* 8. COMPLEXITY & METRICS PANEL */}
+                    <div className="bg-navy-900 border border-navy-700 rounded-2xl p-4 shadow-card flex flex-col justify-between h-44">
+                      <div className="flex items-center justify-between pb-2 border-b border-navy-700/60">
+                        <span className="text-xs font-mono font-bold uppercase text-slate-300 flex items-center gap-2">
+                          <Icon name="cpu" size={14} className="text-accent-amber" /> Metrics & Complexity
+                        </span>
+                        <span className="text-[10px] font-mono text-accent-blue">{currentOperation}</span>
+                      </div>
+                      
+                      <div className="grid grid-cols-2 gap-2 my-auto">
+                        <div className="p-2 rounded-lg bg-navy-800/60 border border-navy-700">
+                          <p className="text-[9px] font-mono text-slate-400 uppercase">Time Complexity</p>
+                          <p className="text-sm font-bold font-mono text-accent-emerald">{timeComplexity}</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-navy-800/60 border border-navy-700">
+                          <p className="text-[9px] font-mono text-slate-400 uppercase">Space Complexity</p>
+                          <p className="text-sm font-bold font-mono text-accent-blue">{spaceComplexity}</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-navy-800/60 border border-navy-700">
+                          <p className="text-[9px] font-mono text-slate-400 uppercase">Total Nodes</p>
+                          <p className="text-sm font-bold font-mono text-white">{totalNodes}</p>
+                        </div>
+                        <div className="p-2 rounded-lg bg-navy-800/60 border border-navy-700">
+                          <p className="text-[9px] font-mono text-slate-400 uppercase">Pointer Traversals</p>
+                          <p className="text-sm font-bold font-mono text-accent-amber">{totalTraversals}</p>
+                        </div>
+                      </div>
+                    </div>
+
+                  </div>
+                </div>
+
+              </div>
+
+            </main>
+          </div>
+
+        </div>
+      );
+    }
+
+    // Render the React application
+    ReactDOM.createRoot(document.getElementById("root")).render(<App />);
+  </script>
+</body>
+</html>
+

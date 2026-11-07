@@ -1,0 +1,17 @@
+venv/
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+.env
+node_modules/
+frontend/node_modules/
+*.log
+uploads/*
+!uploads/.gitkeep
+question_vault.db
+code_arena.db
+dsverse.db
+.DS_Store
+Thumbs.db
