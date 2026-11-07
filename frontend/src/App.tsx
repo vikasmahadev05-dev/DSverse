@@ -23,6 +23,7 @@ import { SkipListVisualizer } from './components/SkipListVisualizer';
 import { DashboardOverview } from './components/DashboardOverview';
 import { CodeArenaWorkspace } from './components/code_arena/CodeArenaWorkspace';
 import { QuestionVaultWorkspace } from './components/question_vault/QuestionVaultWorkspace';
+import { MobileDisclaimerModal } from './components/MobileDisclaimerModal';
 import { linkedListApi } from './services/api';
 import { ListNodeData, ExecutionStep, LogEntry, ComplexityData, MetricsData } from './types';
 import { AlertTriangle, GitCommit, ArrowLeftRight, Repeat, FastForward } from 'lucide-react';
@@ -308,6 +309,9 @@ export const App: React.FC = () => {
 
   return (
     <div className="w-full h-screen flex bg-navy-950 text-slate-200 overflow-hidden font-sans select-none cursor-default">
+      {/* Mobile Screen Disclaimer Modal */}
+      <MobileDisclaimerModal />
+
       <Sidebar activeNav={activeNav} onNavChange={handleNavChange} />
 
       <div className="flex-1 flex flex-col h-full overflow-hidden">
