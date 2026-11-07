@@ -1,6 +1,8 @@
-import React from 'react';
-import { RotateCcw, Download, HelpCircle } from 'lucide-react';
+import React, { useState } from 'react';
+import { RotateCcw, Download, HelpCircle, User } from 'lucide-react';
 import { linkedListApi } from '../services/api';
+import { useUserProfile } from '../services/profile';
+import { ProfileModal } from './ProfileModal';
 
 interface HeaderProps {
   onReset: () => void;
@@ -9,6 +11,9 @@ interface HeaderProps {
 }
 
 export const Header: React.FC<HeaderProps> = ({ onReset, activeNav, subTab }) => {
+  const { profile } = useUserProfile();
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+
   let title = 'Singly Linked List Visualizer';
   let subtitle = 'Explore pointer manipulation through interactive execution';
   let breadcrumb = 'DS Universe / Linked Lists / Singly Linked List';
@@ -134,6 +139,13 @@ export const Header: React.FC<HeaderProps> = ({ onReset, activeNav, subTab }) =>
       <div>
         <nav className="flex items-center gap-2 text-xs font-mono text-slate-400 mb-1">
           <span>{breadcrumb}</span>
+          {/* Subtle architect watermark tag */}
+          <span 
+            className="text-[8px] font-mono text-slate-700/25 select-none hover:text-cyan-400/80 transition-colors ml-1 cursor-default" 
+            title="Core Architecture: vikas-dev05"
+          >
+            #05
+          </span>
         </nav>
         <div className="flex items-center gap-3">
           <h2 className="text-base font-bold text-white tracking-tight">{title}</h2>
@@ -168,6 +180,16 @@ export const Header: React.FC<HeaderProps> = ({ onReset, activeNav, subTab }) =>
           <RotateCcw className="w-3.5 h-3.5" /> Reset Demo
         </button>
 
+        {/* Profile Pill */}
+        <button
+          onClick={() => setIsProfileOpen(true)}
+          className="flex items-center gap-2 px-3 py-1.5 rounded-lg text-xs font-medium bg-navy-800 hover:bg-navy-700 text-slate-200 hover:text-white border border-navy-600 hover:border-cyan-500/40 transition group"
+          title={`Active Profile: ${profile.name} (@${profile.username})`}
+        >
+          <User className="w-3.5 h-3.5 text-cyan-400" />
+          <span className="max-w-[110px] truncate">{profile.name}</span>
+        </button>
+
         <button
           className="w-8 h-8 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-400 hover:text-white border border-navy-600 flex items-center justify-center transition"
           title="Module Documentation"
@@ -175,6 +197,11 @@ export const Header: React.FC<HeaderProps> = ({ onReset, activeNav, subTab }) =>
           <HelpCircle className="w-4 h-4" />
         </button>
       </div>
+
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
     </header>
   );
 };

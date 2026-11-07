@@ -688,7 +688,7 @@ class SaveExperimentPayload(BaseModel):
 
 
 @app.get("/api/experiments")
-def fetch_experiments(username: str = "Vikas"):
+def fetch_experiments(username: str = "scholar"):
     return get_experiments(username)
 
 
@@ -711,7 +711,7 @@ class ArenaRunPayload(BaseModel):
 class ArenaSubmitPayload(BaseModel):
     problem_id: str
     code: str
-    username: Optional[str] = "Vikas"
+    username: Optional[str] = "scholar"
 
 
 class ArenaCompilePayload(BaseModel):
@@ -726,7 +726,7 @@ class ArenaExecuteRawPayload(BaseModel):
 class ArenaSavePayload(BaseModel):
     problem_id: str
     code: str
-    username: Optional[str] = "Vikas"
+    username: Optional[str] = "scholar"
 
 
 @app.get("/api/arena/problems")
@@ -753,7 +753,7 @@ def run_arena_code(payload: ArenaRunPayload):
 @app.post("/api/arena/submit")
 def submit_arena_code(payload: ArenaSubmitPayload):
     """Evaluates code across all test suites, generates verdicts, and stores submission."""
-    return submit_problem_code(payload.problem_id, payload.code, username=payload.username or "Vikas")
+    return submit_problem_code(payload.problem_id, payload.code, username=payload.username or "scholar")
 
 
 @app.post("/api/arena/compile")
@@ -775,13 +775,13 @@ def visualize_arena_execution(payload: ArenaRunPayload):
 
 
 @app.get("/api/arena/submissions")
-def fetch_user_submissions(username: str = "Vikas", problem_id: Optional[str] = None):
+def fetch_user_submissions(username: str = "scholar", problem_id: Optional[str] = None):
     """Returns history of user submissions and verdicts."""
     return get_user_submissions(username=username, problem_id=problem_id)
 
 
 @app.get("/api/arena/saved-solution/{problem_id}")
-def fetch_saved_solution(problem_id: str, username: str = "Vikas"):
+def fetch_saved_solution(problem_id: str, username: str = "scholar"):
     """Fetches user's autosaved code for a problem."""
     code = get_saved_solution(username=username, problem_id=problem_id)
     return {"problem_id": problem_id, "saved_code": code}
@@ -790,7 +790,7 @@ def fetch_saved_solution(problem_id: str, username: str = "Vikas"):
 @app.post("/api/arena/save-solution")
 def persist_solution(payload: ArenaSavePayload):
     """Autosaves user code for a problem."""
-    save_user_solution(username=payload.username or "Vikas", problem_id=payload.problem_id, source_code=payload.code)
+    save_user_solution(username=payload.username or "scholar", problem_id=payload.problem_id, source_code=payload.code)
     return {"status": "saved"}
 
 

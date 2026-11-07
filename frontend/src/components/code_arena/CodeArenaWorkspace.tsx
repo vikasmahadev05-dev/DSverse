@@ -90,7 +90,7 @@ export const CodeArenaWorkspace: React.FC<CodeArenaWorkspaceProps> = ({
     arenaApi.getProblem(selectedProblemId)
       .then((data) => {
         setProblem(data);
-        arenaApi.getSavedSolution(selectedProblemId, 'Vikas')
+        arenaApi.getSavedSolution(selectedProblemId)
           .then((saved) => {
             if (saved?.saved_code) {
               setCode(saved.saved_code);
@@ -277,7 +277,7 @@ export const CodeArenaWorkspace: React.FC<CodeArenaWorkspaceProps> = ({
     setHighlightLine(null);
     setIsRightCollapsed(false);
     try {
-      const res = await arenaApi.submitCode(selectedProblemId, code, 'Vikas');
+      const res = await arenaApi.submitCode(selectedProblemId, code);
       setResult(res);
       setActiveTab('results');
       if (res.errors && res.errors.length > 0) {

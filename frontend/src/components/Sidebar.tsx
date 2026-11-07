@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState } from 'react';
 import { AppLogo } from './AppLogo';
 import { 
   Orbit, 
@@ -13,7 +13,6 @@ import {
   Network, 
   Hash, 
   MountainSnow, 
-  TerminalSquare,
   Code2,
   Terminal,
   Eye,
@@ -24,8 +23,11 @@ import {
   HelpCircle,
   Play,
   Clock,
-  RotateCcw
+  RotateCcw,
+  Settings2
 } from 'lucide-react';
+import { useUserProfile } from '../services/profile';
+import { ProfileModal } from './ProfileModal';
 
 interface SidebarProps {
   activeNav: string;
@@ -33,6 +35,34 @@ interface SidebarProps {
 }
 
 export const Sidebar: React.FC<SidebarProps> = ({ activeNav, onNavChange }) => {
+  const { profile } = useUserProfile();
+  const [isProfileOpen, setIsProfileOpen] = useState<boolean>(false);
+
+  const getInitials = (name: string): string => {
+    if (!name || !name.trim()) return 'DS';
+    const parts = name.trim().split(/\s+/);
+    if (parts.length === 1) return parts[0].slice(0, 2).toUpperCase();
+    return (parts[0][0] + parts[parts.length - 1][0]).toUpperCase();
+  };
+
+  const getThemeColors = (color: string) => {
+    switch (color) {
+      case 'violet':
+        return 'bg-violet-950/70 border-violet-500/40 text-violet-300';
+      case 'emerald':
+        return 'bg-emerald-950/70 border-emerald-500/40 text-emerald-300';
+      case 'amber':
+        return 'bg-amber-950/70 border-amber-500/40 text-amber-300';
+      case 'rose':
+        return 'bg-rose-950/70 border-rose-500/40 text-rose-300';
+      case 'blue':
+        return 'bg-blue-950/70 border-blue-500/40 text-blue-300';
+      case 'cyan':
+      default:
+        return 'bg-cyan-950/70 border-cyan-500/40 text-cyan-300';
+    }
+  };
+
   return (
     <aside className="w-64 border-r border-navy-700 bg-navy-900 flex flex-col justify-between flex-shrink-0 z-20 select-none cursor-default">
       <div>
@@ -376,18 +406,50 @@ export const Sidebar: React.FC<SidebarProps> = ({ activeNav, onNavChange }) => {
         </div>
       </div>
 
-      {/* Academic User Profile Card (No gaming / XP) */}
-      <div className="p-4 border-t border-navy-700/60 bg-navy-950/40">
-        <div className="flex items-center gap-3 p-2.5 rounded-xl bg-navy-800/60 border border-navy-700">
-          <div className="w-8 h-8 rounded-lg bg-navy-700 border border-navy-600 flex items-center justify-center font-mono font-bold text-xs text-accent-blue">
-            <TerminalSquare className="w-4 h-4" />
+      {/* Academic User Profile Card with customizable profile modal */}
+      <div className="p-3.5 border-t border-navy-700/60 bg-navy-950/60">
+        <div 
+          onClick={() => setIsProfileOpen(true)}
+          className="flex items-center gap-2.5 p-2 rounded-xl bg-navy-850 hover:bg-navy-800 border border-navy-700/80 hover:border-cyan-500/40 transition cursor-pointer group"
+          title="Click to manage your academic scholar profile"
+        >
+          <div className={`w-8 h-8 rounded-lg border flex items-center justify-center font-mono font-bold text-xs flex-shrink-0 transition ${getThemeColors(profile.avatarColor)}`}>
+            {getInitials(profile.name)}
           </div>
           <div className="flex-1 min-w-0">
-            <p className="text-xs font-semibold text-white truncate">CS Researcher Vikas</p>
-            <p className="text-[10px] text-slate-400 font-mono">Academic Lab Active</p>
+            <p className="text-xs font-semibold text-white truncate group-hover:text-cyan-300 transition-colors">
+              {profile.name}
+            </p>
+            <p className="text-[10px] text-slate-400 font-mono truncate">
+              @{profile.username}
+            </p>
           </div>
+          <button 
+            type="button"
+            className="p-1 rounded-md text-slate-500 group-hover:text-slate-300 hover:bg-navy-700/80 transition"
+            title="Edit profile settings"
+          >
+            <Settings2 className="w-3.5 h-3.5" />
+          </button>
+        </div>
+
+        {/* Subtle, unnoticeable system footprint with watermark */}
+        <div className="mt-2 pt-1.5 border-t border-navy-800/40 flex items-center justify-between text-[8.5px] font-mono text-slate-700/40 select-none px-1">
+          <span>kernel::v1.1.2</span>
+          <span 
+            className="transition-opacity duration-700 opacity-20 hover:opacity-100 text-slate-700 hover:text-cyan-400 cursor-default tracking-wider"
+            title="Core Architect: vikas-dev05"
+          >
+            vikas-dev05
+          </span>
         </div>
       </div>
+
+      {/* Profile Management Modal */}
+      <ProfileModal 
+        isOpen={isProfileOpen} 
+        onClose={() => setIsProfileOpen(false)} 
+      />
     </aside>
   );
 };

@@ -103,7 +103,7 @@ def save_submission(
     return sub_id
 
 
-def get_user_submissions(username: str = "Vikas", problem_id: Optional[str] = None) -> List[Dict[str, Any]]:
+def get_user_submissions(username: str = "scholar", problem_id: Optional[str] = None) -> List[Dict[str, Any]]:
     init_code_arena_tables()
     conn, backend = get_db_connection()
     cursor = conn.cursor()

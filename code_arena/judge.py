@@ -107,7 +107,7 @@ def run_problem_code(problem_id: str, code: str, mode: str = "function") -> Dict
     }
 
 
-def submit_problem_code(problem_id: str, code: str, username: str = "Vikas") -> Dict[str, Any]:
+def submit_problem_code(problem_id: str, code: str, username: str = "scholar") -> Dict[str, Any]:
     """
     Submits code for comprehensive evaluation across visible and hidden test suites.
     Records submission in the database.

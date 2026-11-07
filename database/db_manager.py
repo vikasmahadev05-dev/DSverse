@@ -127,7 +127,7 @@ def init_db():
     conn.close()
 
 
-def get_or_create_user(username: str = "Vikas"):
+def get_or_create_user(username: str = "Scholar"):
     init_db()
     conn, backend = get_db_connection()
     cursor = conn.cursor()

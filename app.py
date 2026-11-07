@@ -28,7 +28,7 @@ st.set_page_config(
 
 # Initialize Session State
 if "username" not in st.session_state:
-    st.session_state.username = "Vikas"
+    st.session_state.username = "Scholar"
 if "experiments_count" not in st.session_state:
     st.session_state.experiments_count = 0
 

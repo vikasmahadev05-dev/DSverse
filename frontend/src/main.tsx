@@ -10,6 +10,16 @@ window.addEventListener('keydown', (e) => {
   }
 });
 
+try {
+  console.log(
+    '%c⚡ DSVERSE Academic Laboratory %c[core::vikas-dev05]',
+    'color: #06b6d4; font-weight: bold; font-family: monospace;',
+    'color: #64748b; font-size: 9px; font-family: monospace;'
+  );
+} catch {
+  // ignore
+}
+
 ReactDOM.createRoot(document.getElementById('root')!).render(
   <React.StrictMode>
     <App />

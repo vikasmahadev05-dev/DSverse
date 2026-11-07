@@ -126,7 +126,7 @@ class FinishQuizRequest(BaseModel):
 class CodingSubmissionRequest(BaseModel):
     question_id: str
     source_code: str
-    user_name: str = "Vikas"
+    user_name: str = "scholar"
     stdin: Optional[str] = ""
 
 

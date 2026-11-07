@@ -23,7 +23,7 @@ export const SubmissionsHistory: React.FC<SubmissionsHistoryProps> = ({ onLoadCo
   const [selectedSub, setSelectedSub] = useState<Submission | null>(null);
 
   useEffect(() => {
-    arenaApi.getSubmissions('Vikas')
+    arenaApi.getSubmissions()
       .then((data) => {
         setSubmissions(data);
         setLoading(false);

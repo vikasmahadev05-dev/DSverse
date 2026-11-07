@@ -1,4 +1,5 @@
 import { OperationResponse, DiagnosticCase } from '../types';
+import { getCurrentUsername } from './profile';
 
 const BASE_URL = 'http://127.0.0.1:8000/api';
 
@@ -168,16 +169,16 @@ export const arenaApi = {
   getProblem: (problemId: string) => get<any>(`arena/problems/${problemId}`),
   runCode: (problemId: string, code: string, mode: string = 'function') =>
     post<any>('arena/run', { problem_id: problemId, code, mode }),
-  submitCode: (problemId: string, code: string, username: string = 'Vikas') =>
+  submitCode: (problemId: string, code: string, username: string = getCurrentUsername()) =>
     post<any>('arena/submit', { problem_id: problemId, code, username }),
   compileCode: (code: string) => post<any>('arena/compile', { code }),
   executeRaw: (code: string, stdin: string = '') => post<any>('arena/execute-raw', { code, stdin }),
   visualize: (problemId: string, code: string) => post<any>('arena/visualize', { problem_id: problemId, code }),
-  getSubmissions: (username: string = 'Vikas', problemId?: string) =>
-    get<any[]>(`arena/submissions?username=${username}${problemId ? `&problem_id=${problemId}` : ''}`),
-  getSavedSolution: (problemId: string, username: string = 'Vikas') =>
-    get<any>(`arena/saved-solution/${problemId}?username=${username}`),
-  saveSolution: (problemId: string, code: string, username: string = 'Vikas') =>
+  getSubmissions: (username: string = getCurrentUsername(), problemId?: string) =>
+    get<any[]>(`arena/submissions?username=${encodeURIComponent(username)}${problemId ? `&problem_id=${encodeURIComponent(problemId)}` : ''}`),
+  getSavedSolution: (problemId: string, username: string = getCurrentUsername()) =>
+    get<any>(`arena/saved-solution/${problemId}?username=${encodeURIComponent(username)}`),
+  saveSolution: (problemId: string, code: string, username: string = getCurrentUsername()) =>
     post<any>('arena/save-solution', { problem_id: problemId, code, username })
 };
 
@@ -228,7 +229,7 @@ export const vaultApi = {
     }),
   finishQuiz: (quizId: string, timeSpent: number = 0) =>
     post<any>('vault/quiz/finish', { quiz_id: quizId, time_spent_seconds: timeSpent }),
-  executeCode: (questionId: string, sourceCode: string, userName: string = 'Student', stdin: string = '') =>
+  executeCode: (questionId: string, sourceCode: string, userName: string = getCurrentUsername(), stdin: string = '') =>
     post<any>('vault/code/execute', { question_id: questionId, source_code: sourceCode, user_name: userName, stdin }),
   traceCode: (questionId: string, sourceCode: string) =>
     post<any>('vault/code/trace', { question_id: questionId, source_code: sourceCode })
