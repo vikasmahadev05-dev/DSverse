@@ -4,7 +4,8 @@ import {
   XCircle, 
   Edit3, 
   Check, 
-  Sparkles
+  Sparkles,
+  ExternalLink
 } from 'lucide-react';
 import { vaultApi } from '../../services/api';
 
@@ -218,9 +219,22 @@ export const ExtractionReview: React.FC<ExtractionReviewProps> = ({
                         {q.topic_id}
                       </span>
                       <span className="text-slate-600">&bull;</span>
-                      <span className="text-xs font-mono text-slate-400">
-                        Page {q.source_page}
-                      </span>
+                      {q.document_id ? (
+                        <a
+                          href={`/api/vault/documents/${q.document_id}/file#page=${q.source_page}`}
+                          target="_blank"
+                          rel="noopener noreferrer"
+                          className="text-xs font-mono text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1"
+                          title="Open original PDF to this page"
+                        >
+                          <span>Page {q.source_page}</span>
+                          <ExternalLink className="w-2.5 h-2.5" />
+                        </a>
+                      ) : (
+                        <span className="text-xs font-mono text-slate-400">
+                          Page {q.source_page}
+                        </span>
+                      )}
                       <span className="text-slate-600">&bull;</span>
                       <span className="text-[11px] font-mono text-slate-500">
                         {Math.round(q.extraction_confidence * 100)}% Confidence

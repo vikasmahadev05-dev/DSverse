@@ -1,7 +1,7 @@
 import { OperationResponse, DiagnosticCase } from '../types';
 import { getCurrentUsername } from './profile';
 
-const BASE_URL = 'http://127.0.0.1:8000/api';
+const BASE_URL = '/api';
 
 async function post<T>(endpoint: string, body?: any): Promise<T> {
   const res = await fetch(`${BASE_URL}/${endpoint}`, {

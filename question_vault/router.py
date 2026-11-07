@@ -9,7 +9,7 @@ import shutil
 import uuid
 from typing import List, Optional
 from fastapi import APIRouter, UploadFile, File, Form, HTTPException, BackgroundTasks
-from fastapi.responses import JSONResponse
+from fastapi.responses import JSONResponse, FileResponse
 
 from question_vault.models import (
     DocumentRenameRequest,
@@ -157,6 +157,21 @@ def get_single_document(doc_id: str):
     if not doc:
         raise HTTPException(status_code=404, detail="Document not found")
     return doc
+
+
+@vault_router.get("/documents/{doc_id}/file")
+def get_pdf_file_stream(doc_id: str):
+    doc = get_document(doc_id)
+    if not doc:
+        raise HTTPException(status_code=404, detail="Document not found")
+    file_path = doc.get("file_path", "")
+    if not os.path.exists(file_path):
+        raise HTTPException(status_code=404, detail="Original PDF file no longer exists on server")
+    return FileResponse(
+        file_path,
+        media_type="application/pdf",
+        filename=doc.get("filename", "document.pdf")
+    )
 
 
 @vault_router.patch("/documents/{doc_id}/rename")

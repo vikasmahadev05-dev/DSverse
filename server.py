@@ -794,6 +794,17 @@ def persist_solution(payload: ArenaSavePayload):
     return {"status": "saved"}
 
 
+@app.get("/{full_path:path}")
+def catch_all(full_path: str):
+    """Fallback catch-all route for Single Page Application client-side routing."""
+    if full_path.startswith("api/"):
+        raise HTTPException(status_code=404, detail=f"API endpoint '/{full_path}' not found.")
+    dist_index = os.path.join(FRONTEND_DIST, "index.html")
+    if os.path.exists(dist_index):
+        return FileResponse(dist_index)
+    raise HTTPException(status_code=404, detail="Page not found.")
+
+
 if __name__ == "__main__":
     import uvicorn
     port = int(os.environ.get("PORT", 8000))

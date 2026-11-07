@@ -5,7 +5,8 @@ import {
   BookmarkCheck, 
   Plus, 
   Play, 
-  Code2
+  Code2,
+  ExternalLink
 } from 'lucide-react';
 import { vaultApi } from '../../services/api';
 
@@ -279,8 +280,22 @@ export const QuestionBank: React.FC<QuestionBankProps> = ({
                 </div>
 
                 <div className="flex items-center gap-2">
-                  <span className="text-[10px] font-mono text-slate-500">
-                    Page {q.source_page} &bull; {q.document_name || 'Standard Exam'}
+                  <span className="text-[10px] font-mono text-slate-500 flex items-center gap-1">
+                    {q.document_id ? (
+                      <a
+                        href={`/api/vault/documents/${q.document_id}/file#page=${q.source_page}`}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="text-cyan-400 hover:text-cyan-300 hover:underline flex items-center gap-1"
+                        title="View page in source PDF"
+                      >
+                        <span>Page {q.source_page}</span>
+                        <ExternalLink className="w-2.5 h-2.5" />
+                      </a>
+                    ) : (
+                      <span>Page {q.source_page}</span>
+                    )}
+                    <span>&bull; {q.document_name || 'Standard Exam'}</span>
                   </span>
                   <button
                     onClick={() => handleToggleBookmark(q.question_id)}

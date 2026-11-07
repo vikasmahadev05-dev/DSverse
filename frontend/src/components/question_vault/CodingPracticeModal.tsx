@@ -9,6 +9,7 @@ import {
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { vaultApi } from '../../services/api';
+import { getCurrentUsername } from '../../services/profile';
 
 interface CodingPracticeModalProps {
   question: any;
@@ -38,7 +39,7 @@ export const CodingPracticeModal: React.FC<CodingPracticeModalProps> = ({
     setIsRunning(true);
     setResult(null);
     try {
-      const res = await vaultApi.executeCode(question.question_id, code, 'Student');
+      const res = await vaultApi.executeCode(question.question_id, code, getCurrentUsername());
       setResult(res);
     } catch (err: any) {
       setResult({

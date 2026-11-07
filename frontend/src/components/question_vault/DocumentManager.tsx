@@ -7,7 +7,8 @@ import {
   Edit3,
   Sparkles,
   FileSearch,
-  Check
+  Check,
+  ExternalLink
 } from 'lucide-react';
 import { vaultApi } from '../../services/api';
 
@@ -311,6 +312,16 @@ export const DocumentManager: React.FC<DocumentManagerProps> = ({
                   >
                     <FileSearch className="w-3.5 h-3.5" /> Question Bank
                   </button>
+
+                  <a
+                    href={`/api/vault/documents/${doc.document_id}/file`}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="p-2 rounded-lg bg-navy-800 hover:bg-navy-700 text-slate-400 hover:text-cyan-300 transition border border-navy-700 flex items-center gap-1 text-xs font-mono"
+                    title="Open original PDF in browser"
+                  >
+                    <ExternalLink className="w-3.5 h-3.5" />
+                  </a>
 
                   <button
                     onClick={() => handleReprocess(doc.document_id)}

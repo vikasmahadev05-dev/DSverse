@@ -14,6 +14,7 @@ import {
 } from 'lucide-react';
 import Editor from '@monaco-editor/react';
 import { vaultApi } from '../../services/api';
+import { getCurrentUsername } from '../../services/profile';
 
 interface CodingWorkspaceProps {
   initialQuestion?: any;
@@ -126,7 +127,7 @@ export const CodingWorkspace: React.FC<CodingWorkspaceProps> = ({
       const res = await vaultApi.executeCode(
         selectedQuestion.question_id,
         code,
-        'Student',
+        getCurrentUsername(),
         stdinInput
       );
       setResult(res);
